@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
+import NavTracker from "@/components/NavTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -38,6 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <NavTracker />
         <div className="mesh-bg" aria-hidden="true">
           <div className="blob blob-1" />
           <div className="blob blob-2" />

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import {
   getAllPoemSlugs,
   getPoemBySlug,
@@ -43,6 +44,10 @@ export default async function PoemPage({
 
   return (
     <main className="poem-page">
+      <Link href="/" className="poem-logo">
+        mipoem
+      </Link>
+
       <BackLink href="/" className="back-link">
         &larr; back to all poems
       </BackLink>

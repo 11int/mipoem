@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
  * A "back" link that returns to the previous page (restoring scroll position,
- * Pinterest-style) when the visitor arrived from within the site. If they
- * landed here directly (e.g. opened the link in a new tab), it falls back to
- * a normal navigation to `href` so the link always works.
+ * Pinterest-style) only when the visitor reached this page by navigating
+ * within the site. If they landed here directly (a shared link, a search
+ * result, or a typed URL), going "back" would leave mipoem entirely, so it
+ * navigates to `href` instead — guaranteeing they always end up on the listing.
  */
 export default function BackLink({
   href,
@@ -19,22 +19,25 @@ export default function BackLink({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [canGoBack, setCanGoBack] = useState(false);
 
-  useEffect(() => {
-    // history.length > 1 means there's a prior entry to return to in this tab.
-    setCanGoBack(window.history.length > 1);
-  }, []);
+  function arrivedFromWithinSite(): boolean {
+    try {
+      return window.history.state?.mipoemInApp === true;
+    } catch {
+      return false;
+    }
+  }
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
     // Respect modifier clicks (open in new tab, etc.).
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
       return;
     }
-    if (canGoBack) {
+    if (arrivedFromWithinSite()) {
       e.preventDefault();
       router.back();
     }
+    // Otherwise let the normal navigation to `href` happen.
   }
 
   return (
