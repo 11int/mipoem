@@ -9,6 +9,7 @@ import {
   type Store,
 } from "@/lib/rateLimit";
 import { commitFiles, getRepoFileText, isGitHubConfigured } from "@/lib/github";
+import { verifyChallenge } from "@/lib/challenge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,6 +44,22 @@ export async function POST(request: NextRequest) {
     title?: string;
     poem?: string;
   };
+
+  // Honeypot: a hidden field real users never see. If it's filled, it's a bot.
+  const honeypot = (body as { website?: string } | null)?.website;
+  if (typeof honeypot === "string" && honeypot.trim() !== "") {
+    // Pretend it worked so bots don't learn they were caught.
+    return NextResponse.json({ slug: "", title: "", pending: true }, { status: 201 });
+  }
+
+  // Human-verification challenge (signed math question, no third-party service).
+  const { answer, token } = (body as { answer?: unknown; token?: unknown }) ?? {};
+  if (!verifyChallenge(token, answer)) {
+    return NextResponse.json(
+      { error: "Verification failed. Please try the question again." },
+      { status: 400 }
+    );
+  }
 
   if (typeof poem !== "string" || poem.trim().length < 2) {
     return NextResponse.json(

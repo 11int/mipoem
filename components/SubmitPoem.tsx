@@ -15,8 +15,29 @@ export default function SubmitPoem() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [posted, setPosted] = useState(false);
+  const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(
+    null
+  );
+  const [answer, setAnswer] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — stays empty for humans
 
   useEffect(() => setMounted(true), []);
+
+  async function loadChallenge() {
+    setChallenge(null);
+    setAnswer("");
+    try {
+      const res = await fetch("/api/challenge", { cache: "no-store" });
+      if (res.ok) setChallenge(await res.json());
+    } catch {
+      // Leave it null; the button stays disabled until it loads.
+    }
+  }
+
+  // Fetch a fresh human-verification question whenever the modal opens.
+  useEffect(() => {
+    if (open) loadChallenge();
+  }, [open]);
 
   const hasContent =
     author.trim() !== "" || title.trim() !== "" || poem.trim() !== "";
@@ -29,6 +50,8 @@ export default function SubmitPoem() {
     setSubmitting(false);
     setConfirmDiscard(false);
     setPosted(false);
+    setAnswer("");
+    setWebsite("");
   }
 
   function doClose() {
@@ -59,13 +82,22 @@ export default function SubmitPoem() {
       const res = await fetch("/api/poems", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ author, title, poem }),
+        body: JSON.stringify({
+          author,
+          title,
+          poem,
+          answer,
+          token: challenge?.token,
+          website,
+        }),
       });
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
+        // Tokens are single-use-ish; hand out a fresh question on any failure.
+        loadChallenge();
         return;
       }
 
@@ -128,7 +160,7 @@ export default function SubmitPoem() {
 
             {posted ? (
               <div className="poem-posted">
-                <p className="posted-title">Thank you — your poem is in.</p>
+                <p className="posted-title">Thank you <br /> your poem is in.</p>
                 <p className="posted-sub">
                   It&apos;s being added to the wall and will appear here within a
                   minute or two.
@@ -175,6 +207,36 @@ export default function SubmitPoem() {
                 give it a <em>red highlight</em>.
               </p>
 
+              {/* Honeypot: hidden from people, tempting to bots. */}
+              <div className="hp-field" aria-hidden="true">
+                <label htmlFor="website">Website</label>
+                <input
+                  id="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+              </div>
+
+              <div className="challenge-row">
+                <label htmlFor="challenge-answer">
+                  {challenge ? challenge.question : "Loading a quick question…"}
+                </label>
+                <input
+                  id="challenge-answer"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Answer"
+                  disabled={!challenge}
+                  required
+                />
+              </div>
+
               {error && <p className="form-error">{error}</p>}
 
               <div className="form-actions">
@@ -189,7 +251,7 @@ export default function SubmitPoem() {
                 <button
                   type="submit"
                   className="btn-primary"
-                  disabled={submitting}
+                  disabled={submitting || !challenge}
                 >
                   {submitting ? "Posting…" : "Post poem"}
                 </button>

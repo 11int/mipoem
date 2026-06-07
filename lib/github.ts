@@ -174,3 +174,75 @@ export async function commitFiles(
     }
   }
 }
+
+/**
+ * Removes one or more files from the configured branch in a single commit.
+ * Retries once on a fast-forward conflict (concurrent change).
+ */
+export async function deleteFiles(
+  paths: string[],
+  message: string
+): Promise<void> {
+  const cfg = getGitHubConfig();
+  if (!cfg) throw new Error("GitHub storage is not configured.");
+
+  const attempt = async (): Promise<boolean> => {
+    const ref = await gh<{ object: { sha: string } }>(
+      cfg,
+      `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${cfg.branch}`
+    );
+    const headSha = ref.object.sha;
+    const headCommit = await gh<{ tree: { sha: string } }>(
+      cfg,
+      `/repos/${cfg.owner}/${cfg.repo}/git/commits/${headSha}`
+    );
+
+    // A tree entry with sha:null deletes the path from the tree.
+    const treeItems = paths.map((p) => ({
+      path: p,
+      mode: "100644",
+      type: "blob",
+      sha: null,
+    }));
+
+    const tree = await gh<{ sha: string }>(
+      cfg,
+      `/repos/${cfg.owner}/${cfg.repo}/git/trees`,
+      {
+        method: "POST",
+        body: JSON.stringify({ base_tree: headCommit.tree.sha, tree: treeItems }),
+      }
+    );
+
+    const commit = await gh<{ sha: string }>(
+      cfg,
+      `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
+      {
+        method: "POST",
+        body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] }),
+      }
+    );
+
+    const res = await fetch(
+      `${API}/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${cfg.branch}`,
+      {
+        method: "PATCH",
+        headers: headers(cfg),
+        cache: "no-store",
+        body: JSON.stringify({ sha: commit.sha, force: false }),
+      }
+    );
+    if (res.status === 422) return false;
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`GitHub update ref failed: ${res.status} ${detail}`);
+    }
+    return true;
+  };
+
+  if (!(await attempt())) {
+    if (!(await attempt())) {
+      throw new Error("Could not delete file after a concurrent update.");
+    }
+  }
+}

@@ -196,3 +196,49 @@ export function writePoemFileLocally(built: BuiltPoem): void {
 
   fs.writeFileSync(fullPath, built.fileContents, "utf8");
 }
+
+/** True if a slug is a safe, simple file slug (no path traversal). */
+export function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9][a-z0-9-]{0,79}$/.test(slug);
+}
+
+export type EditPoemInput = {
+  slug: string;
+  title: string;
+  author: string;
+  poem: string;
+  /** Preserved front matter from the existing file. */
+  date?: string;
+  tags?: string[];
+};
+
+/**
+ * Rebuilds an existing poem's markdown file, keeping its slug (and therefore
+ * its URL) stable while updating title/author/body. Pure (no IO).
+ */
+export function buildEditedPoemFile(input: EditPoemInput): BuiltPoem {
+  if (!isValidSlug(input.slug)) {
+    throw new Error("Invalid poem.");
+  }
+
+  const author = cleanLine(input.author || "", MAX_AUTHOR) || "Anonymous";
+  const body = cleanBody(input.poem || "", MAX_POEM);
+  if (body.length < 2) {
+    throw new Error("Poem is empty.");
+  }
+  const title = cleanLine(input.title || "", MAX_TITLE) || "Untitled";
+
+  const fileContents = matter.stringify(`\n${body}\n`, {
+    title,
+    author,
+    date: input.date || new Date().toISOString().slice(0, 10),
+    tags: input.tags && input.tags.length ? input.tags : ["community"],
+  });
+
+  return {
+    slug: input.slug,
+    title,
+    relPath: `poems/${input.slug}.md`,
+    fileContents,
+  };
+}

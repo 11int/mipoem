@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Poem, PoemMeta } from "@/lib/poems";
+import SharePoem from "@/components/SharePoem";
 
 export default function PoemView({
   poem,
@@ -14,10 +15,13 @@ export default function PoemView({
     <div className="poem-layout">
       <article className="poem-article">
         <h1 className="poem-title">{poem.title}</h1>
-        <p className="poem-byline">
-          by {poem.author}
-          {poem.date && ` · ${poem.date}`}
-        </p>
+        <div className="poem-byline-row">
+          <p className="poem-byline">
+            by {poem.author}
+            {poem.date && ` · ${poem.date}`}
+          </p>
+          <SharePoem slug={poem.slug} title={poem.title} />
+        </div>
 
         <div
           className="poem-body"

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAllPoems } from "@/lib/poems";
 import PoemCard from "@/components/PoemCard";
 import SiteHeader from "@/components/SiteHeader";
@@ -27,7 +28,12 @@ export default function Home() {
       </div>
 
       <footer className="site-footer">
-        copyright &copy; {new Date().getFullYear()} mipoem.
+        <p>copyright &copy; {new Date().getFullYear()} mipoem.</p>
+        <p className="footer-links">
+          <Link href="/terms">Terms</Link>
+          <span aria-hidden="true"> &middot; </span>
+          <Link href="/privacy">Privacy</Link>
+        </p>
       </footer>
     </main>
   );

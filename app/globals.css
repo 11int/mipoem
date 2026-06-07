@@ -584,6 +584,46 @@ a {
   font-style: normal;
 }
 
+/* Honeypot: kept in the DOM (so bots fill it) but away from people. */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.challenge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.challenge-row label {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink);
+  flex: 1 1 auto;
+}
+
+.challenge-row input {
+  flex: 0 0 6rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 0.6rem 0.7rem;
+}
+
+.challenge-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .form-actions {
   display: flex;
   justify-content: center;
@@ -856,11 +896,37 @@ a {
   margin: 0 0 0.6rem;
 }
 
+.poem-byline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
 .poem-byline {
   font-family: var(--font-body);
   font-style: italic;
   color: var(--ink-soft);
-  margin-bottom: 2.5rem;
+  margin: 0;
+}
+
+.poem-share {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.poem-share:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .poem-body {
@@ -966,6 +1032,188 @@ a {
   border-top: 1px solid var(--line);
 }
 
+.site-footer p {
+  margin: 0 0 0.4rem;
+}
+
+.site-footer .footer-links a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-footer .footer-links a:hover {
+  color: var(--accent);
+}
+
 .site-footer .heart {
   color: var(--accent);
+}
+
+/* ---------- Legal / content pages ---------- */
+.legal-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 5rem;
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+.legal-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  margin: 1.5rem 0 0.3rem;
+}
+
+.legal-updated {
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0 0 2rem;
+}
+
+.legal-page h2 {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  margin: 2.2rem 0 0.6rem;
+}
+
+.legal-page p,
+.legal-page li {
+  color: var(--ink);
+}
+
+.legal-page ul {
+  padding-left: 1.2rem;
+}
+
+.legal-page a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-footnote {
+  margin-top: 2.5rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+/* ---------- Hidden moderation page ---------- */
+.admin-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+}
+
+.admin-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.admin-item-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+
+.admin-item-meta {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.admin-item-excerpt {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.admin-item-actions {
+  flex: none;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.admin-link {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+}
+
+.admin-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.admin-link-danger:hover {
+  color: #fff;
+  background: var(--accent);
+}
+
+.admin-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-error {
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.admin-login {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 320px;
+}
+
+.admin-login label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.admin-login input {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 0.7rem 0.8rem;
+}
+
+.admin-login input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
