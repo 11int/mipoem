@@ -5,7 +5,7 @@ import { getAllPoems } from "@/lib/poems";
 import { ADMIN_COOKIE, isAdminConfigured, isValidSession } from "@/lib/admin";
 import AdminLogin from "@/components/AdminLogin";
 import AdminLogout from "@/components/AdminLogout";
-import AdminDeleteButton from "@/components/AdminDeleteButton";
+import AdminPoemRow from "@/components/AdminPoemRow";
 
 // Unlisted page: nothing links here and search engines are told to skip it.
 // Edit and delete happen in-app via the server-side GitHub token, so no
@@ -71,25 +71,14 @@ export default async function AdminPage() {
       ) : (
         <ul className="admin-list">
           {poems.map((poem) => (
-            <li key={poem.slug} className="admin-item">
-              <div className="admin-item-main">
-                <span className="admin-item-title">{poem.title}</span>
-                <span className="admin-item-meta">
-                  {poem.author}
-                  {poem.date && ` · ${poem.date}`}
-                </span>
-                <span className="admin-item-excerpt">{poem.excerpt}</span>
-              </div>
-              <div className="admin-item-actions">
-                <Link href={`/poems/${poem.slug}`} className="admin-link">
-                  View
-                </Link>
-                <Link href={`/admin/${poem.slug}/edit`} className="admin-link">
-                  Edit
-                </Link>
-                <AdminDeleteButton slug={poem.slug} title={poem.title} />
-              </div>
-            </li>
+            <AdminPoemRow
+              key={poem.slug}
+              slug={poem.slug}
+              title={poem.title}
+              author={poem.author}
+              date={poem.date}
+              excerpt={poem.excerpt}
+            />
           ))}
         </ul>
       )}

@@ -1183,6 +1183,15 @@ a {
   gap: 0.4rem;
 }
 
+.admin-item.is-removed {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.admin-item.is-removed .admin-item-meta {
+  color: var(--accent);
+}
+
 .admin-error {
   font-size: 0.78rem;
   color: var(--accent);

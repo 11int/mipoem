@@ -186,63 +186,45 @@ export async function deleteFiles(
   const cfg = getGitHubConfig();
   if (!cfg) throw new Error("GitHub storage is not configured.");
 
-  const attempt = async (): Promise<boolean> => {
-    const ref = await gh<{ object: { sha: string } }>(
-      cfg,
-      `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${cfg.branch}`
-    );
-    const headSha = ref.object.sha;
-    const headCommit = await gh<{ tree: { sha: string } }>(
-      cfg,
-      `/repos/${cfg.owner}/${cfg.repo}/git/commits/${headSha}`
-    );
+  for (const path of paths) {
+    const encoded = encodeURIComponent(path).replace(/%2F/g, "/");
+    const base = `/repos/${cfg.owner}/${cfg.repo}/contents/${encoded}`;
 
-    // A tree entry with sha:null deletes the path from the tree.
-    const treeItems = paths.map((p) => ({
-      path: p,
-      mode: "100644",
-      type: "blob",
-      sha: null,
-    }));
-
-    const tree = await gh<{ sha: string }>(
-      cfg,
-      `/repos/${cfg.owner}/${cfg.repo}/git/trees`,
-      {
-        method: "POST",
-        body: JSON.stringify({ base_tree: headCommit.tree.sha, tree: treeItems }),
-      }
+    // Look up the file's current blob sha. If it's already gone, skip it so
+    // repeated deletes are idempotent (a second click won't error).
+    const lookup = await fetch(
+      `${API}${base}?ref=${encodeURIComponent(cfg.branch)}`,
+      { headers: headers(cfg), cache: "no-store" }
     );
+    if (lookup.status === 404) continue;
+    if (!lookup.ok) {
+      const detail = await lookup.text().catch(() => "");
+      throw new Error(`GitHub GET ${base} failed: ${lookup.status} ${detail}`);
+    }
+    const file = (await lookup.json()) as { sha?: string };
+    if (!file.sha) continue;
 
-    const commit = await gh<{ sha: string }>(
-      cfg,
-      `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
-      {
-        method: "POST",
-        body: JSON.stringify({ message, tree: tree.sha, parents: [headSha] }),
-      }
-    );
-
-    const res = await fetch(
-      `${API}/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${cfg.branch}`,
-      {
-        method: "PATCH",
-        headers: headers(cfg),
-        cache: "no-store",
-        body: JSON.stringify({ sha: commit.sha, force: false }),
-      }
-    );
-    if (res.status === 422) return false;
+    const res = await fetch(`${API}${base}`, {
+      method: "DELETE",
+      headers: headers(cfg),
+      cache: "no-store",
+      body: JSON.stringify({
+        message,
+        sha: file.sha,
+        branch: cfg.branch,
+      }),
+    });
+    // 409/422 can mean it moved or was deleted concurrently — re-check once.
+    if (res.status === 409 || res.status === 422) {
+      const recheck = await fetch(
+        `${API}${base}?ref=${encodeURIComponent(cfg.branch)}`,
+        { headers: headers(cfg), cache: "no-store" }
+      );
+      if (recheck.status === 404) continue; // already gone — treat as success
+    }
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
-      throw new Error(`GitHub update ref failed: ${res.status} ${detail}`);
-    }
-    return true;
-  };
-
-  if (!(await attempt())) {
-    if (!(await attempt())) {
-      throw new Error("Could not delete file after a concurrent update.");
+      throw new Error(`GitHub DELETE ${base} failed: ${res.status} ${detail}`);
     }
   }
 }
