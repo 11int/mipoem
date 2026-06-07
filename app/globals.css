@@ -1,0 +1,873 @@
+:root {
+  --bg: #f6f2ea;
+  --bg-soft: #efe9dd;
+  --ink: #2b2622;
+  --ink-soft: #6b6258;
+  --line: #e2d9c8;
+  --accent: #b14b3b;
+  --card-radius: 18px;
+  --font-serif: "DM Serif Text", Georgia, "Times New Roman", serif;
+  --font-body: "Radley", Georgia, serif;
+  --font-display: "Explora", "DM Serif Text", cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---------- Animated mesh background ---------- */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+  /* Promote to its own GPU layer so the drifting blobs don't repaint page content */
+  transform: translateZ(0);
+  contain: strict;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  /* Soft edges come from the radial-gradient itself — no costly blur filter
+     and no mix-blend-mode, both of which forced full-screen recompositing. */
+  will-change: transform;
+  transform: translateZ(0);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes drift-a {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  50% {
+    transform: translate(18%, 14%) scale(1.12);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+}
+@keyframes drift-b {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  50% {
+    transform: translate(-16%, 16%) scale(1.08);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+}
+@keyframes drift-c {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  50% {
+    transform: translate(14%, -16%) scale(1.14);
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+}
+
+.blob-1 {
+  top: -15%;
+  left: -10%;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(231, 184, 166, 0.65),
+    rgba(231, 184, 166, 0) 70%
+  );
+  animation: drift-a 26s infinite ease-in-out;
+}
+.blob-2 {
+  top: -20%;
+  left: 45%;
+  width: 75%;
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(236, 214, 172, 0.6),
+    rgba(236, 214, 172, 0) 70%
+  );
+  animation: drift-b 32s infinite ease-in-out;
+}
+.blob-3 {
+  top: 35%;
+  left: 20%;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(216, 191, 208, 0.55),
+    rgba(216, 191, 208, 0) 70%
+  );
+  animation: drift-c 36s infinite ease-in-out;
+}
+
+.mesh-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22 stitchTiles=%22stitch%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>');
+  background-size: 220px;
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- Header (morphs into a navbar on scroll) ---------- */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: 16rem;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: height 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.4s ease, backdrop-filter 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.site-header.is-nav {
+  height: 7rem;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Keeps the page content flowing below the fixed header and rises with it. */
+.header-spacer {
+  height: 16rem;
+  transition: height 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.header-spacer.is-nav {
+  /* navbar height (7rem) + breathing room before the cards */
+  height: 8.5rem;
+}
+
+/* Aligns the logo + CTA to the same max-width as the poem cards. */
+.site-header-inner {
+  position: relative;
+  max-width: 1240px;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.site-header .brand {
+  position: absolute;
+  top: 3.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: center center;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 9vw, 6rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  margin: 0;
+  white-space: nowrap;
+  transition: top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header.is-nav .brand {
+  top: 50%;
+  left: 0;
+  transform: translateX(1.5rem) translateY(-50%);
+}
+
+.site-header .tagline {
+  position: absolute;
+  top: 9.7rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  margin: 0;
+  font-style: italic;
+  white-space: nowrap;
+  transition: opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header.is-nav .tagline {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-1.4rem);
+  pointer-events: none;
+}
+
+.header-cta {
+  position: absolute;
+  top: 12.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header.is-nav .header-cta {
+  top: 50%;
+  left: 100%;
+  transform: translateX(calc(-100% - 1.5rem)) translateY(-50%);
+}
+
+.header-cta .share-button {
+  margin-top: 0;
+}
+
+/* ---------- Intro animation ---------- */
+.divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--line);
+  transform-origin: center;
+}
+
+/* The header title IS the intro: it starts huge and centered on the
+   empty page, then settles into its header position as one motion. */
+.home .brand {
+  transform-origin: center center;
+  will-change: transform, opacity;
+  animation: intro-brand 2.2s cubic-bezier(0.7, 0, 0.18, 1) both;
+}
+
+.home .tagline {
+  animation: intro-fade 0.9s ease 2.3s both;
+}
+
+.home .share-button {
+  animation: intro-fade 0.9s ease 2.5s both;
+}
+
+.home .divider {
+  animation: intro-line 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.7s both;
+}
+
+.home .container {
+  animation: intro-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both;
+}
+
+@keyframes intro-brand {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 38vh) scale(4);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(-50%, 38vh) scale(4);
+  }
+  46% {
+    opacity: 1;
+    transform: translate(-50%, 38vh) scale(4);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes intro-line {
+  from {
+    opacity: 0;
+    transform: translateY(45vh) scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home .brand,
+  .home .tagline,
+  .home .share-button,
+  .home .divider,
+  .home .container {
+    animation: none;
+  }
+}
+
+/* Once the intro has settled, drop the entrance animations so the scroll
+   morph fully controls the transforms (no fighting over the same props). */
+.site-header.is-ready .brand,
+.site-header.is-ready .tagline,
+.site-header.is-ready .header-cta .share-button,
+.site-header.is-ready .divider {
+  animation: none;
+}
+
+
+.share-button {
+  margin-top: 1.6rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--bg);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 0.6rem 1.4rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.share-button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 38, 34, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 1.25rem;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  padding: 2.4rem 2rem 2rem;
+  box-shadow: 0 20px 60px rgba(43, 38, 34, 0.25);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  margin: 0 0 0.4rem;
+}
+
+.modal-sub {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0 0 1.6rem;
+}
+
+.poem-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.poem-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.poem-form input,
+.poem-form textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 0.7rem 0.8rem;
+  width: 100%;
+  resize: vertical;
+}
+
+.poem-form textarea {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.poem-form input:focus,
+.poem-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-error {
+  font-family: var(--font-body);
+  color: var(--accent);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.form-hint {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: -0.4rem 0 0;
+}
+
+.form-hint code {
+  font-family: var(--font-body);
+  background: var(--bg-soft);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+
+.form-hint em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+}
+
+/* ---------- Discard confirmation ---------- */
+.discard-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 38, 34, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 2;
+}
+
+.discard-box {
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  padding: 1.8rem 1.6rem 1.5rem;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(43, 38, 34, 0.25);
+}
+
+.discard-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+}
+
+.discard-sub {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin: 0 0 1.4rem;
+}
+
+.btn-ghost,
+.btn-primary {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.6rem 1.3rem;
+  cursor: pointer;
+  border: 1px solid var(--ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.btn-primary:disabled,
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+
+/* ---------- Layout ---------- */
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+/* ---------- Masonry grid ---------- */
+.masonry {
+  column-count: 4;
+  column-gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .masonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 800px) {
+  .masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .masonry {
+    column-count: 1;
+  }
+}
+
+.card {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  padding: 1.6rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(43, 38, 34, 0.04);
+}
+
+.card .card-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0 0 0.7rem;
+}
+
+.card .card-excerpt {
+  font-family: var(--font-body);
+  white-space: pre-line;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.92;
+}
+
+.card .card-meta {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.card .card-meta .author {
+  font-style: italic;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.tag {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--bg-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+}
+
+/* ---------- Poem page ---------- */
+.poem-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+}
+
+.back-link {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  display: inline-block;
+  margin-bottom: 2.5rem;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+/* ---------- Poem layout (article + suggestions) ---------- */
+.poem-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 3rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .poem-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.poem-article {
+  max-width: 680px;
+}
+
+.suggestions {
+  position: sticky;
+  top: 2rem;
+}
+
+.suggestions-title {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 1rem;
+}
+
+.suggestions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.suggestion {
+  display: block;
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  padding: 1rem 1.1rem;
+  transition: border-color 0.15s ease;
+}
+
+.suggestion:hover {
+  border-color: var(--accent);
+}
+
+.suggestion-name {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  line-height: 1.2;
+  margin-bottom: 0.45rem;
+}
+
+.suggestion-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  white-space: pre-line;
+  margin-bottom: 0.5rem;
+}
+
+.suggestion-author {
+  display: block;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.poem-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  line-height: 1.1;
+  margin: 0 0 0.6rem;
+}
+
+.poem-byline {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-bottom: 2.5rem;
+}
+
+.poem-body {
+  font-family: var(--font-body);
+  font-size: 1.2rem;
+  line-height: 2;
+}
+
+.poem-body p {
+  white-space: pre-line;
+  margin: 0 0 1.6rem;
+}
+
+.poem-body em {
+  color: var(--accent);
+}
+
+/* ---------- Poem modal (Pinterest-style overlay) ---------- */
+.poem-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 38, 34, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1.25rem;
+  overflow-y: auto;
+  z-index: 60;
+  animation: fade-in 0.18s ease;
+}
+
+.poem-modal {
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 3rem 2.4rem 2.6rem;
+  box-shadow: 0 24px 70px rgba(43, 38, 34, 0.3);
+  animation: pop-in 0.2s ease;
+}
+
+.poem-modal .poem-layout {
+  grid-template-columns: minmax(0, 1fr) 230px;
+}
+
+@media (max-width: 760px) {
+  .poem-modal {
+    padding: 2.6rem 1.5rem 2rem;
+  }
+  .poem-modal .poem-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.poem-modal .suggestions {
+  position: static;
+}
+
+.poem-modal-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 1.1rem;
+  background: none;
+  border: none;
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.poem-modal-close:hover {
+  color: var(--accent);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-footer {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.site-footer .heart {
+  color: var(--accent);
+}
