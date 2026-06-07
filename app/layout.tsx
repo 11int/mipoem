@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "mipoem — a quiet place for poems",
   description:
     "mipoem is a Pinterest-style collection of poems. Browse, read, and breathe.",
