@@ -256,28 +256,38 @@ a {
 }
 
 .header-cta {
-  position: absolute;
-  top: 12.4rem;
-  left: 50%;
-  transform: translateX(-50%);
-  transition: top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.site-header.is-nav .header-cta {
-  top: 50%;
-  /* Anchor by the element's own centre (translateX(-50%)) in BOTH states so
-     the pill↔square width morph never shifts the horizontal position. Only
-     this `left` point moves, which keeps the centred header state exact and
-     stops the "drift right then snap" on the way back up.
-     2.95rem = 1.5rem edge gap + half the 2.9rem square. */
-  left: calc(100% - 2.95rem);
-  transform: translateX(-50%) translateY(-50%);
+  /* Transparent wrapper. The button itself is positioned against
+     .site-header-inner so that the centring transform and the pill↔square
+     width morph live on the SAME element — mobile browsers then resolve them
+     in one pass instead of letting a parent lag a frame behind (which caused
+     the end-of-animation snap). */
+  position: static;
 }
 
 .header-cta .share-button {
+  position: absolute;
+  top: 12.4rem;
+  left: 50%;
   margin-top: 0;
+  transform: translateX(-50%);
+  transition: background 0.15s ease, color 0.15s ease,
+    top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header.is-nav .header-cta .share-button {
+  top: 50%;
+  /* Pure transform move (no animated `left`) avoids the iOS layout/compositor
+     desync. min(50vw, 620px) == half the inner column width in every case, so
+     the button's centre lands at the right edge minus the gap and half-square.
+     2.95rem = 1.5rem edge gap + half the 2.9rem square. */
+  transform: translate(
+    calc(-50% + min(50vw, 620px) - 2.95rem),
+    -50%
+  );
 }
 
 /* ---------- Intro animation ---------- */
