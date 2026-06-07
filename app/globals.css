@@ -503,6 +503,23 @@ a {
   margin: 0 0 1.6rem;
 }
 
+.poem-posted {
+  font-family: var(--font-body);
+}
+
+.poem-posted .posted-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  color: var(--ink);
+  margin: 0 0 0.6rem;
+}
+
+.poem-posted .posted-sub {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 0 0 1.6rem;
+}
+
 .poem-form {
   display: flex;
   flex-direction: column;

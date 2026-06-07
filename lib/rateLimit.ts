@@ -4,46 +4,35 @@ import path from "path";
 const dataDir = path.join(process.cwd(), "data");
 const storeFile = path.join(dataDir, "rate-limits.json");
 
+/** Repo-relative path used when persisting the store to GitHub. */
+export const RATE_STORE_PATH = "data/rate-limits.json";
+
 // Limits: keep it simple but spam-resistant.
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 const MAX_PER_HOUR = 3;
 const MAX_PER_DAY = 10;
 
-type Store = Record<string, number[]>;
-
-function readStore(): Store {
-  try {
-    const raw = fs.readFileSync(storeFile, "utf8");
-    return JSON.parse(raw) as Store;
-  } catch {
-    return {};
-  }
-}
-
-function writeStore(store: Store): void {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  fs.writeFileSync(storeFile, JSON.stringify(store), "utf8");
-}
+export type Store = Record<string, number[]>;
 
 export type RateResult = {
   allowed: boolean;
   retryAfterSeconds?: number;
+  /** The store to persist when the request is allowed. */
+  nextStore?: Store;
 };
 
 /**
- * Records a hit for the given key (IP) and returns whether it is allowed.
- * Uses two sliding windows: per-hour and per-day.
+ * Pure rate-limit evaluation: given the current store and a key, decide if the
+ * request is allowed and return the store that should be persisted. No IO, so
+ * it works the same whether the store lives on disk (dev) or in GitHub (prod).
  */
-export function checkRateLimit(key: string): RateResult {
-  const now = Date.now();
-  const store = readStore();
-
-  // Drop timestamps older than a day for this key, and prune empty keys.
+export function evaluateRateLimit(
+  store: Store,
+  key: string,
+  now: number = Date.now()
+): RateResult {
   const recent = (store[key] ?? []).filter((t) => now - t < DAY);
-
   const lastHour = recent.filter((t) => now - t < HOUR);
 
   if (lastHour.length >= MAX_PER_HOUR) {
@@ -63,14 +52,31 @@ export function checkRateLimit(key: string): RateResult {
   }
 
   recent.push(now);
-  store[key] = recent;
+  const next: Store = { ...store, [key]: recent };
 
-  // Opportunistically prune other stale keys to keep the file small.
-  for (const k of Object.keys(store)) {
-    store[k] = store[k].filter((t) => now - t < DAY);
-    if (store[k].length === 0) delete store[k];
+  // Prune stale keys so the persisted store stays small.
+  for (const k of Object.keys(next)) {
+    next[k] = next[k].filter((t) => now - t < DAY);
+    if (next[k].length === 0) delete next[k];
   }
 
-  writeStore(store);
-  return { allowed: true };
+  return { allowed: true, nextStore: next };
+}
+
+/** Reads the rate-limit store from the local filesystem (dev only). */
+export function readStoreLocal(): Store {
+  try {
+    const raw = fs.readFileSync(storeFile, "utf8");
+    return JSON.parse(raw) as Store;
+  } catch {
+    return {};
+  }
+}
+
+/** Writes the rate-limit store to the local filesystem (dev only). */
+export function writeStoreLocal(store: Store): void {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  fs.writeFileSync(storeFile, JSON.stringify(store), "utf8");
 }

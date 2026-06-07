@@ -14,6 +14,7 @@ export default function SubmitPoem() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [posted, setPosted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -27,6 +28,7 @@ export default function SubmitPoem() {
     setError(null);
     setSubmitting(false);
     setConfirmDiscard(false);
+    setPosted(false);
   }
 
   function doClose() {
@@ -64,6 +66,15 @@ export default function SubmitPoem() {
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
+        return;
+      }
+
+      // When the poem is committed to the repo it only goes live after the
+      // redeploy, so show a confirmation rather than navigating to a page that
+      // doesn't exist yet. In local dev it's written immediately, so jump to it.
+      if (data.pending) {
+        reset();
+        setPosted(true);
         return;
       }
 
@@ -115,7 +126,25 @@ export default function SubmitPoem() {
               Write something. It joins the wall for everyone to read.
             </p>
 
-            <form onSubmit={handleSubmit} className="poem-form">
+            {posted ? (
+              <div className="poem-posted">
+                <p className="posted-title">Thank you — your poem is in.</p>
+                <p className="posted-sub">
+                  It&apos;s being added to the wall and will appear here within a
+                  minute or two.
+                </p>
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={doClose}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="poem-form">
               <input
                 type="text"
                 value={author}
@@ -166,6 +195,7 @@ export default function SubmitPoem() {
                 </button>
               </div>
             </form>
+            )}
 
             {confirmDiscard && (
               <div

@@ -116,6 +116,13 @@ export type NewPoemInput = {
 
 export type CreatedPoem = { slug: string; title: string };
 
+export type BuiltPoem = CreatedPoem & {
+  /** Repo-relative path, e.g. "poems/my-poem-ab12c.md". */
+  relPath: string;
+  /** Full markdown file contents (front matter + body). */
+  fileContents: string;
+};
+
 const MAX_AUTHOR = 60;
 const MAX_TITLE = 120;
 const MAX_POEM = 4000;
@@ -140,7 +147,11 @@ function cleanBody(value: string, maxLength: number): string {
     .slice(0, maxLength);
 }
 
-export function createPoem(input: NewPoemInput): CreatedPoem {
+/**
+ * Validates and sanitizes input, then builds the markdown file for a new poem.
+ * Pure (no IO) so the caller can persist it to disk (dev) or GitHub (prod).
+ */
+export function buildPoemFile(input: NewPoemInput): BuiltPoem {
   const author = cleanLine(input.author || "", MAX_AUTHOR) || "Anonymous";
   const body = cleanBody(input.poem || "", MAX_POEM);
 
@@ -165,17 +176,23 @@ export function createPoem(input: NewPoemInput): CreatedPoem {
     tags: ["community"],
   });
 
+  return { slug, title, relPath: `poems/${slug}.md`, fileContents };
+}
+
+/**
+ * Writes a built poem to the local filesystem. Dev-only fallback — Vercel's
+ * runtime filesystem is read-only, so production persists via GitHub instead.
+ */
+export function writePoemFileLocally(built: BuiltPoem): void {
   if (!fs.existsSync(poemsDirectory)) {
     fs.mkdirSync(poemsDirectory, { recursive: true });
   }
 
   // path.join with a sanitized slug avoids traversal; double-check it stays in dir.
-  const fullPath = path.join(poemsDirectory, `${slug}.md`);
+  const fullPath = path.join(poemsDirectory, `${built.slug}.md`);
   if (path.dirname(fullPath) !== poemsDirectory) {
     throw new Error("Invalid poem path.");
   }
 
-  fs.writeFileSync(fullPath, fileContents, "utf8");
-
-  return { slug, title };
+  fs.writeFileSync(fullPath, built.fileContents, "utf8");
 }
