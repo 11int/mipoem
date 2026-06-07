@@ -79,8 +79,15 @@ export default function SubmitPoem() {
 
   return (
     <>
-      <button className="share-button" onClick={() => setOpen(true)}>
-        Share a poem
+      <button
+        className="share-button"
+        onClick={() => setOpen(true)}
+        aria-label="Share a poem"
+      >
+        <span className="share-button-label">Share a poem</span>
+        <span className="share-button-icon" aria-hidden="true">
+          +
+        </span>
       </button>
 
       {open &&

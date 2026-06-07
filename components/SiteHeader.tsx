@@ -8,8 +8,26 @@ export default function SiteHeader() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
+    let ticking = false;
+    // requestAnimationFrame throttling keeps the morph in sync with the
+    // browser's paint cycle, and the hysteresis (turn into nav at 64px,
+    // back to header below 24px) stops it flickering on tiny scrolls.
+    const update = () => {
+      ticking = false;
+      const y = window.scrollY;
+      setScrolled((prev) => {
+        if (!prev && y > 64) return true;
+        if (prev && y < 24) return false;
+        return prev;
+      });
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(update);
+      }
+    };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
