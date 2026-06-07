@@ -5,11 +5,9 @@ import SharePoem from "@/components/SharePoem";
 export default function PoemView({
   poem,
   suggestions,
-  inModal = false,
 }: {
   poem: Poem;
   suggestions: PoemMeta[];
-  inModal?: boolean;
 }) {
   return (
     <div className="poem-layout">
@@ -37,7 +35,6 @@ export default function PoemView({
               <li key={s.slug}>
                 <Link
                   href={`/poems/${s.slug}`}
-                  replace={inModal}
                   className="suggestion"
                 >
                   <span className="suggestion-name">{s.title}</span>

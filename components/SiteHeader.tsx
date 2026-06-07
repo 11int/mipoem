@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import SubmitPoem from "./SubmitPoem";
+
+// useLayoutEffect runs before the browser paints (so we can cancel the intro
+// before it's ever visible), but it warns during SSR — fall back to useEffect
+// on the server where it's a no-op anyway.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+const INTRO_FLAG = "mipoem:introPlayed";
 
 export default function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [ready, setReady] = useState(false);
+  // Freezes transitions for the first frame on return so the header doesn't
+  // visibly morph from its big resting state into the compact navbar.
+  const [noAnim, setNoAnim] = useState(false);
 
   useEffect(() => {
     let ticking = false;
@@ -32,15 +43,38 @@ export default function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Let the intro animation settle before enabling the scroll morph so the
-  // two motions never fight over the same transforms.
-  useEffect(() => {
+  // Play the entrance animation only on the first visit of the session. On
+  // back/forward navigation (or a refresh) the page re-mounts, so skip the
+  // intro and show the header in its resting — or already-scrolled — state
+  // immediately, Pinterest-style, with no replayed animation.
+  useIsoLayoutEffect(() => {
+    const alreadyPlayed = sessionStorage.getItem(INTRO_FLAG) === "1";
+    if (alreadyPlayed) {
+      document.documentElement.classList.add("intro-done");
+      setScrolled(window.scrollY > 64);
+      setNoAnim(true);
+      setReady(true);
+      return;
+    }
+    sessionStorage.setItem(INTRO_FLAG, "1");
+    // Let the intro settle before enabling the scroll morph so the two
+    // motions never fight over the same transforms.
     const t = window.setTimeout(() => setReady(true), 3400);
     return () => window.clearTimeout(t);
   }, []);
 
+  // Release the one-frame transition freeze so normal scroll morphing resumes.
+  useEffect(() => {
+    if (!noAnim) return;
+    const r = window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => setNoAnim(false))
+    );
+    return () => window.cancelAnimationFrame(r);
+  }, [noAnim]);
+
   const cls = [
     "site-header",
+    noAnim ? "no-anim" : "",
     ready ? "is-ready" : "",
     ready && scrolled ? "is-nav" : "",
   ]
@@ -63,3 +97,4 @@ export default function SiteHeader() {
     </>
   );
 }
+

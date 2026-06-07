@@ -2,11 +2,26 @@ import Link from "next/link";
 import { getAllPoems } from "@/lib/poems";
 import PoemCard from "@/components/PoemCard";
 import SiteHeader from "@/components/SiteHeader";
+import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+const PAGE_SIZE = 12;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const poems = getAllPoems();
+
+  const totalPages = Math.max(1, Math.ceil(poems.length / PAGE_SIZE));
+  const requested = Number((await searchParams)?.page);
+  const page = Number.isFinite(requested)
+    ? Math.min(Math.max(Math.trunc(requested), 1), totalPages)
+    : 1;
+  const start = (page - 1) * PAGE_SIZE;
+  const visible = poems.slice(start, start + PAGE_SIZE);
 
   return (
     <main className="home">
@@ -19,11 +34,14 @@ export default function Home() {
             <code>/poems</code> folder.
           </p>
         ) : (
-          <section className="masonry">
-            {poems.map((poem) => (
-              <PoemCard key={poem.slug} poem={poem} />
-            ))}
-          </section>
+          <>
+            <section className="masonry">
+              {visible.map((poem) => (
+                <PoemCard key={poem.slug} poem={poem} />
+              ))}
+            </section>
+            <Pagination current={page} total={totalPages} />
+          </>
         )}
       </div>
 

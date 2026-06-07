@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getAllPoemSlugs,
@@ -6,6 +5,7 @@ import {
   getRandomPoems,
 } from "@/lib/poems";
 import PoemView from "@/components/PoemView";
+import BackLink from "@/components/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +43,9 @@ export default async function PoemPage({
 
   return (
     <main className="poem-page">
-      <Link href="/" className="back-link">
+      <BackLink href="/" className="back-link">
         &larr; back to all poems
-      </Link>
+      </BackLink>
 
       <PoemView poem={poem} suggestions={suggestions} />
     </main>

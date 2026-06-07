@@ -9,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  modal,
 }: {
   children: React.ReactNode;
-  modal: React.ReactNode;
 }) {
   return (
     <html lang="en">
@@ -27,6 +25,15 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&family=Italiana&family=Radley:ital@0;1&display=swap"
           rel="stylesheet"
         />
+        {/* Runs before first paint: if the intro already played this session,
+            mark the document so the entrance animation is skipped with no flash
+            on a full page load/refresh. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('mipoem:introPlayed')==='1'){document.documentElement.classList.add('intro-done')}}catch(e){}",
+          }}
+        />
       </head>
       <body>
         <div className="mesh-bg" aria-hidden="true">
@@ -36,7 +43,6 @@ export default function RootLayout({
           <div className="mesh-noise" />
         </div>
         {children}
-        {modal}
       </body>
     </html>
   );

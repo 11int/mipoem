@@ -413,6 +413,29 @@ a {
   animation: none;
 }
 
+/* Returning to the page within a session (back/forward or refresh): skip the
+   whole entrance animation so it doesn't replay, Pinterest-style. The
+   `intro-done` class is set before the first paint, so nothing flashes. */
+html.intro-done .home .brand,
+html.intro-done .home .tagline,
+html.intro-done .home .share-button,
+html.intro-done .home .divider,
+html.intro-done .home .container {
+  animation: none;
+}
+
+/* For the first paint after returning, freeze the header's morph transitions
+   so it appears directly in its resting/scrolled state instead of sliding
+   from one to the other. */
+.site-header.no-anim,
+.site-header.no-anim .brand,
+.site-header.no-anim .tagline,
+.site-header.no-anim .header-cta .share-button,
+.site-header.no-anim .divider,
+.header-spacer.no-anim {
+  transition: none;
+}
+
 
 .share-button {
   margin-top: 1.6rem;
@@ -673,6 +696,50 @@ a {
   max-width: 1240px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 5rem;
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 3rem;
+}
+
+.page-link {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  min-width: 2.2rem;
+  text-align: center;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.page-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.page-link.is-current {
+  color: var(--bg);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.page-link.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.page-gap {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  padding: 0 0.2rem;
 }
 
 /* ---------- Masonry grid ---------- */
