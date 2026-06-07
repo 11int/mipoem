@@ -23,6 +23,10 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* Always reserve space for the vertical scrollbar so navigating between a
+     long page (scrollbar shown) and a short one (no scrollbar) doesn't change
+     the viewport width and shift centered content sideways. */
+  scrollbar-gutter: stable;
   /* Leave room for the fixed navbar so anchored jumps never tuck content
      underneath it. */
   scroll-padding-top: 9rem;
@@ -593,35 +597,6 @@ a {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
-}
-
-.challenge-row {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-}
-
-.challenge-row label {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--ink);
-  flex: 1 1 auto;
-}
-
-.challenge-row input {
-  flex: 0 0 6rem;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  color: var(--ink);
-  background: var(--bg);
-  border: 1px solid var(--line);
-  padding: 0.6rem 0.7rem;
-}
-
-.challenge-row input:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 .form-actions {

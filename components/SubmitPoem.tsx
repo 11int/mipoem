@@ -15,29 +15,9 @@ export default function SubmitPoem() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [posted, setPosted] = useState(false);
-  const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(
-    null
-  );
-  const [answer, setAnswer] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — stays empty for humans
 
   useEffect(() => setMounted(true), []);
-
-  async function loadChallenge() {
-    setChallenge(null);
-    setAnswer("");
-    try {
-      const res = await fetch("/api/challenge", { cache: "no-store" });
-      if (res.ok) setChallenge(await res.json());
-    } catch {
-      // Leave it null; the button stays disabled until it loads.
-    }
-  }
-
-  // Fetch a fresh human-verification question whenever the modal opens.
-  useEffect(() => {
-    if (open) loadChallenge();
-  }, [open]);
 
   const hasContent =
     author.trim() !== "" || title.trim() !== "" || poem.trim() !== "";
@@ -50,7 +30,6 @@ export default function SubmitPoem() {
     setSubmitting(false);
     setConfirmDiscard(false);
     setPosted(false);
-    setAnswer("");
     setWebsite("");
   }
 
@@ -86,8 +65,6 @@ export default function SubmitPoem() {
           author,
           title,
           poem,
-          answer,
-          token: challenge?.token,
           website,
         }),
       });
@@ -96,8 +73,6 @@ export default function SubmitPoem() {
       if (!res.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
-        // Tokens are single-use-ish; hand out a fresh question on any failure.
-        loadChallenge();
         return;
       }
 
@@ -220,23 +195,6 @@ export default function SubmitPoem() {
                 />
               </div>
 
-              <div className="challenge-row">
-                <label htmlFor="challenge-answer">
-                  {challenge ? challenge.question : "Loading a quick question…"}
-                </label>
-                <input
-                  id="challenge-answer"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Answer"
-                  disabled={!challenge}
-                  required
-                />
-              </div>
-
               {error && <p className="form-error">{error}</p>}
 
               <div className="form-actions">
@@ -251,7 +209,7 @@ export default function SubmitPoem() {
                 <button
                   type="submit"
                   className="btn-primary"
-                  disabled={submitting || !challenge}
+                  disabled={submitting}
                 >
                   {submitting ? "Posting…" : "Post poem"}
                 </button>
