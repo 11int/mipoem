@@ -27,7 +27,7 @@ export default function Home() {
       </div>
 
       <footer className="site-footer">
-        made with <span className="heart">&hearts;</span> &middot; mipoem
+        copyright &copy; {new Date().getFullYear()} mipoem.
       </footer>
     </main>
   );
