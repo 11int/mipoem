@@ -267,8 +267,13 @@ a {
 
 .site-header.is-nav .header-cta {
   top: 50%;
-  left: 100%;
-  transform: translateX(calc(-100% - 1.5rem)) translateY(-50%);
+  /* Anchor by the element's own centre (translateX(-50%)) in BOTH states so
+     the pill↔square width morph never shifts the horizontal position. Only
+     this `left` point moves, which keeps the centred header state exact and
+     stops the "drift right then snap" on the way back up.
+     2.95rem = 1.5rem edge gap + half the 2.9rem square. */
+  left: calc(100% - 2.95rem);
+  transform: translateX(-50%) translateY(-50%);
 }
 
 .header-cta .share-button {
